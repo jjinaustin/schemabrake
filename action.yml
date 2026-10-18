@@ -1,5 +1,5 @@
 name: SchemaBrake
-description: Flags PostgreSQL migrations in a pull request that lock tables or lose data. Prisma, Drizzle and plain SQL; no database needed.
+description: Flags PostgreSQL migrations in pull requests that lock tables or lose data. Prisma, Drizzle and plain SQL.
 branding:
   icon: shield
   color: red
