@@ -106,3 +106,10 @@ CREATE INDEX "Flag_name_idx" ON "Flag"("name");
 npm install
 npm test        # tsc + vitest; fixtures are real Prisma and Drizzle output (see test/fixtures)
 ```
+
+## Releasing
+
+Publish a GitHub release with a `vX.Y.Z` tag created from `main`. The `major-tag` workflow then
+points `vX` at it, so users pinned to `@v1` get the release. It skips pre-releases and backports
+(a `v1.0.1` published after `v1.1.0` leaves `v1` alone). To point a major tag at a specific
+release, run the workflow by hand with that release's tag.
