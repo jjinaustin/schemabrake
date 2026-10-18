@@ -1,0 +1,59 @@
+name: SchemaBrake
+description: Flags PostgreSQL migrations in a pull request that lock tables or lose data. Prisma, Drizzle and plain SQL; no database needed.
+branding:
+  icon: shield
+  color: red
+
+inputs:
+  github-token:
+    description: "Token used to read the pull request's files and post the report comment. Needs `pull-requests: write` to comment."
+    default: ${{ github.token }}
+  paths:
+    description: >
+      Directories holding migrations, one per line or comma-separated, relative to the repository root.
+      By default, any `prisma/migrations/*/migration.sql` and any `.sql` file under a `drizzle/` directory.
+    default: ""
+  fail-on:
+    description: "Lowest severity that fails the check: critical, warning, info or never."
+    default: critical
+  disable:
+    description: Comma-separated rule IDs to skip, e.g. `HAZ-06`.
+    default: ""
+  comment:
+    description: Post the report as a pull request comment, edited in place on later pushes. Set to `false` to only annotate.
+    default: "true"
+
+outputs:
+  files:
+    description: Number of migration files checked.
+    value: ${{ steps.check.outputs.files }}
+  critical:
+    description: Number of critical findings.
+    value: ${{ steps.check.outputs.critical }}
+  warning:
+    description: Number of warnings.
+    value: ${{ steps.check.outputs.warning }}
+  info:
+    description: Number of info findings.
+    value: ${{ steps.check.outputs.info }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install SchemaBrake
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        node -e 'const [a,b]=process.versions.node.split(".").map(Number); if (a<18||(a===18&&b<18)) { console.log("::error title=SchemaBrake::Needs Node 18.18 or later on the runner; found " + process.version + ". Add actions/setup-node before this action."); process.exit(1) }'
+        npm ci --no-audit --no-fund --loglevel=error
+        npm run build --silent
+    - name: Check migrations
+      id: check
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/dist/action.js"
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_DISABLE: ${{ inputs.disable }}
+        INPUT_COMMENT: ${{ inputs.comment }}
