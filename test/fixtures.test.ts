@@ -13,6 +13,10 @@ const PRISMA_INIT = `${F}/prisma/migrations/20261001000000_init/migration.sql`;
 const PRISMA_CHANGE = `${F}/prisma/migrations/20261018000000_add_stripe_id/migration.sql`;
 const DRIZZLE_INIT = `${F}/drizzle/0000_init.sql`;
 const DRIZZLE_CHANGE = `${F}/drizzle/0001_add_stripe.sql`;
+const PRISMA_LINK = `${F}/prisma/migrations/20261019000000_link_invoices/migration.sql`;
+const PRISMA_REQUIRE = `${F}/prisma/migrations/20261020000000_require_invoice_user/migration.sql`;
+const DRIZZLE_LINK = `${F}/drizzle/0002_link_invoices.sql`;
+const DRIZZLE_REQUIRE = `${F}/drizzle/0003_require_invoice_user.sql`;
 
 const summary = async (path: string) => (await analyzeFile(path)).findings.map((f) => `${f.rule}@${f.line}`);
 
@@ -35,6 +39,20 @@ describe("generated Prisma migrations", () => {
       "HAZ-06@1",
     ]);
   });
+  it("flags dropping a unique index and linking an existing table", async () => {
+    expect(await summary(PRISMA_LINK)).toEqual([
+      "HAZ-09@2", // DROP INDEX "User_email_key"
+      "HAZ-07@8", // ADD CONSTRAINT "Invoice_userId_fkey" FOREIGN KEY
+      "HAZ-06@1",
+    ]);
+  });
+  it("flags making a relation required, which Prisma does by re-adding the foreign key", async () => {
+    expect(await summary(PRISMA_REQUIRE)).toEqual([
+      "HAZ-08@5", // SET NOT NULL
+      "HAZ-07@8", // ADD CONSTRAINT "Invoice_userId_fkey" FOREIGN KEY, again
+      "HAZ-06@1",
+    ]);
+  });
 });
 
 describe("generated Drizzle migrations", () => {
@@ -54,6 +72,16 @@ describe("generated Drizzle migrations", () => {
       "HAZ-04@9", // SET DATA TYPE bigint
       "HAZ-06@1",
     ]);
+  });
+  it("finds the foreign key inside Drizzle's DO block", async () => {
+    expect(await summary(DRIZZLE_LINK)).toEqual([
+      "HAZ-09@1", // DROP INDEX IF EXISTS "users_email_idx"
+      "HAZ-07@4", // ADD CONSTRAINT ... FOREIGN KEY, inside DO $$ BEGIN ... END $$
+      "HAZ-06@1",
+    ]);
+  });
+  it("flags making a column required", async () => {
+    expect(await summary(DRIZZLE_REQUIRE)).toEqual(["HAZ-08@1", "HAZ-06@1"]);
   });
 });
 
@@ -97,7 +125,7 @@ describe("CLI", () => {
   });
   it("prints JSON", () => {
     const out = JSON.parse(run("check", `${F}/drizzle`, "--format", "json").stdout);
-    expect(out.summary).toEqual({ files: 2, critical: 4, warning: 2, info: 1, errors: 0 });
+    expect(out.summary).toEqual({ files: 4, critical: 4, warning: 5, info: 3, errors: 0 });
   });
   it("exits 2 on bad usage and on unparseable SQL", () => {
     expect(run("check", "--format", "xml", PRISMA_INIT).status).toBe(2);

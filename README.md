@@ -58,9 +58,14 @@ The runner needs Node 18.18 or later; GitHub-hosted runners have it.
 | HAZ-03 | critical | `DROP COLUMN`, `DROP TABLE` | Data is gone; the previous release still queries it. Prisma renames show up as drop + add. |
 | HAZ-04 | warning | `ALTER COLUMN ... TYPE` | ACCESS EXCLUSIVE lock, usually a full table rewrite. |
 | HAZ-05 | warning | `ALTER TYPE ... ADD VALUE` | Can't run in a transaction before PG 12; the value can't be used in the same transaction after. |
-| HAZ-06 | info | A file with any of the above and no `down.sql` / `<name>.down.sql` beside it | Neither ORM generates down migrations. |
+| HAZ-06 | info | A file with any other finding and no `down.sql` / `<name>.down.sql` beside it | Neither ORM generates down migrations. |
+| HAZ-07 | warning | `ADD CONSTRAINT ... FOREIGN KEY` without `NOT VALID`, or validated in the same file | Checks every row while blocking writes to both tables. Prisma re-adds the key whenever a relation becomes required. |
+| HAZ-08 | warning | `ALTER COLUMN ... SET NOT NULL` | ACCESS EXCLUSIVE lock while every row is scanned for NULLs. |
+| HAZ-09 | warning | `DROP INDEX` without `CONCURRENTLY` | Brief ACCESS EXCLUSIVE lock, but it queues behind running queries and everything queues behind it. |
 
-Statements on a table created earlier in the same file are not flagged: nothing is reading it yet.
+Statements on a table or index created earlier in the same file are not flagged: nothing is reading
+it yet. Statements inside a `DO $$ BEGIN ... [EXCEPTION ...] END $$` block, the wrapper Drizzle puts
+around every foreign key, are checked like any other.
 Every finding carries remediation written for the ORM that generated the file.
 
 ## Options
@@ -86,11 +91,14 @@ CREATE INDEX "Flag_name_idx" ON "Flag"("name");
 
 ## Limits
 
-- Statements inside `DO $$ ... $$` blocks are not inspected.
+- `DO` blocks with variables, control flow or `EXECUTE` are not inspected; only a plain
+  `BEGIN <statements> [EXCEPTION ...] END` body is.
 - HAZ-04 cannot tell a binary-compatible change (e.g. `varchar(50)` to `text`) from a rewrite
   without the old type, so it warns on both.
-- No rule yet for `ADD CONSTRAINT ... FOREIGN KEY` without `NOT VALID`, `SET NOT NULL`, or
-  `DROP INDEX` without `CONCURRENTLY`, which all lock existing tables.
+- HAZ-08 does not notice a validated `CHECK (col IS NOT NULL)` that makes the scan unnecessary;
+  suppress it with an ignore comment when you have one.
+- No rule yet for `ADD CONSTRAINT ... CHECK` or `UNIQUE` without `NOT VALID` / `USING INDEX`, or for a
+  `FOREIGN KEY` declared inline in `ADD COLUMN ... REFERENCES`.
 
 ## Development
 
