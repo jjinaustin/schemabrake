@@ -1,0 +1,24 @@
+datasource db {
+  provider = "postgresql"
+  url = "postgresql://x"
+}
+enum Role {
+  USER
+}
+model User {
+  id    Int    @id @default(autoincrement())
+  email String
+  age   Int
+  legacy String?
+  role  Role @default(USER)
+  posts Post[]
+}
+model Post {
+  id     Int  @id @default(autoincrement())
+  title  String
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+model Audit {
+  id Int @id
+}

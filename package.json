@@ -1,0 +1,40 @@
+{
+  "name": "schemabrake",
+  "version": "0.1.0",
+  "description": "Static PostgreSQL migration safety checks for Prisma and Drizzle. No database connection.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc && vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "prisma",
+    "drizzle",
+    "postgresql",
+    "migrations",
+    "lint",
+    "ci"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "libpg-query": "^17.7.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "schemabrake": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.18"
+  }
+}
