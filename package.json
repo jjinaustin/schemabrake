@@ -1,6 +1,6 @@
 {
   "name": "schemabrake",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Static PostgreSQL migration safety checks for Prisma and Drizzle. No database connection.",
   "main": "dist/index.js",
   "scripts": {

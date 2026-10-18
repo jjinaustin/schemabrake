@@ -23,8 +23,8 @@ jobs:
   schemabrake:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: jjinaustin/schemabrake@main
+      - uses: actions/checkout@v5
+      - uses: jjinaustin/schemabrake@v1
 ```
 
 The action checks only the migration files the pull request adds or changes, read from the
