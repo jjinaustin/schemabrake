@@ -74,8 +74,8 @@ describe("HAZ-03 data loss", () => {
   it("passes dropping a table created earlier in the same file", async () => {
     expect(await rules(`CREATE TABLE tmp (c int);\nDROP TABLE tmp;`)).toEqual([]);
   });
-  it("ignores dropping indexes and views", async () => {
-    expect(await rules(`DROP INDEX i;\nDROP VIEW v;`)).toEqual([]);
+  it("does not count dropping indexes or views as data loss", async () => {
+    expect(await rules(`DROP INDEX CONCURRENTLY i;\nDROP VIEW v;`)).toEqual([]);
   });
 });
 
@@ -156,7 +156,78 @@ describe("parsing", () => {
     expect(r.error?.line).toBe(2);
     expect(r.findings).toEqual([]);
   });
-  it("does not look inside DO blocks", async () => {
-    expect(await rules(`DO $$ BEGIN DROP TABLE t; END $$;`)).toEqual([]);
+});
+
+describe("DO blocks", () => {
+  it("checks the statement inside Drizzle's BEGIN ... EXCEPTION ... END wrapper, at its own line", async () => {
+    const sql = `SELECT 1;\nDO $$ BEGIN\n ALTER TABLE a ADD CONSTRAINT f FOREIGN KEY (x) REFERENCES b(id);\nEXCEPTION\n WHEN duplicate_object THEN null;\nEND $$;`;
+    const r = await analyzeSql("m.sql", sql, { hasDownMigration: true });
+    expect(r.findings.map((f) => [f.rule, f.line])).toEqual([["HAZ-07", 3]]);
+  });
+  it("handles tagged dollar quotes and column locations inside the block", async () => {
+    // The column starts its line, so an offset that is off by even one byte lands on line 4.
+    const sql = `-- é\nDO $body$\nBEGIN\n  ALTER TABLE t ADD COLUMN\nc text NOT NULL;\nEND\n$body$;`;
+    const r = await analyzeSql("m.sql", sql, { hasDownMigration: true });
+    expect(r.findings.map((f) => [f.rule, f.line])).toEqual([["HAZ-02", 5]]);
+  });
+  it("applies an ignore comment above the DO block to what is inside it", async () => {
+    expect(await rules(`-- schemabrake-ignore HAZ-03\nDO $$ BEGIN DROP TABLE t; END $$;`)).toEqual([]);
+  });
+  it.each([
+    [`DO $$ DECLARE n int; BEGIN SELECT count(*) INTO n FROM t; IF n = 0 THEN DROP TABLE t; END IF; END $$;`],
+    [`DO $$ BEGIN EXECUTE 'DROP TABLE t'; END $$;`],
+    [`DO LANGUAGE plv8 $$ BEGIN DROP TABLE t; END $$;`],
+    [`DO 'BEGIN DROP TABLE t; END';`],
+  ])("leaves blocks it cannot read as plain SQL unchecked: %s", async (sql) => {
+    expect(await rules(sql)).toEqual([]);
+  });
+});
+
+describe("HAZ-07 foreign key validated under lock", () => {
+  it("flags a foreign key added to an existing table", async () => {
+    expect(await rules(`ALTER TABLE a ADD CONSTRAINT f FOREIGN KEY (x) REFERENCES b(id);`)).toEqual(["HAZ-07"]);
+  });
+  it("passes NOT VALID", async () => {
+    expect(await rules(`ALTER TABLE a ADD CONSTRAINT f FOREIGN KEY (x) REFERENCES b(id) NOT VALID;`)).toEqual([]);
+  });
+  it("flags NOT VALID followed by VALIDATE in the same file, at the VALIDATE", async () => {
+    const sql = `ALTER TABLE a ADD CONSTRAINT f FOREIGN KEY (x) REFERENCES b(id) NOT VALID;\nALTER TABLE a VALIDATE CONSTRAINT f;`;
+    const r = await analyzeSql("m.sql", sql, { hasDownMigration: true });
+    expect(r.findings.map((f) => [f.rule, f.line])).toEqual([["HAZ-07", 2]]);
+    expect(r.findings[0].message).toContain("validated in the same migration");
+  });
+  it("passes VALIDATE on its own, which is the safe second step", async () => {
+    expect(await rules(`ALTER TABLE a VALIDATE CONSTRAINT f;`)).toEqual([]);
+  });
+  it("passes a foreign key on a table created in the same file", async () => {
+    expect(await rules(`CREATE TABLE a (x int);\nALTER TABLE a ADD CONSTRAINT f FOREIGN KEY (x) REFERENCES b(id);`)).toEqual([]);
+  });
+  it("ignores other constraints", async () => {
+    expect(await rules(`ALTER TABLE a ADD CONSTRAINT c CHECK (x > 0) NOT VALID;`)).toEqual([]);
+  });
+});
+
+describe("HAZ-08 SET NOT NULL", () => {
+  it("flags SET NOT NULL on an existing table", async () => {
+    expect(await rules(`ALTER TABLE t ALTER COLUMN c SET NOT NULL;`)).toEqual(["HAZ-08"]);
+  });
+  it("passes DROP NOT NULL and a table created in the same file", async () => {
+    expect(await rules(`ALTER TABLE t ALTER COLUMN c DROP NOT NULL;`)).toEqual([]);
+    expect(await rules(`CREATE TABLE t (c int);\nALTER TABLE t ALTER COLUMN c SET NOT NULL;`)).toEqual([]);
+  });
+});
+
+describe("HAZ-09 DROP INDEX without CONCURRENTLY", () => {
+  it("flags each index dropped without CONCURRENTLY", async () => {
+    expect(await rules(`DROP INDEX i;`)).toEqual(["HAZ-09"]);
+    expect(await rules(`DROP INDEX IF EXISTS a, b;`)).toEqual(["HAZ-09", "HAZ-09"]);
+  });
+  it("passes CONCURRENTLY", async () => {
+    expect(await rules(`DROP INDEX CONCURRENTLY IF EXISTS i;`)).toEqual([]);
+  });
+  it("passes an index created earlier in the same file, matching schemas", async () => {
+    expect(await rules(`CREATE INDEX CONCURRENTLY i ON t (c);\nDROP INDEX i;`)).toEqual([]);
+    expect(await rules(`CREATE INDEX CONCURRENTLY i ON s.t (c);\nDROP INDEX s.i;`)).toEqual([]);
+    expect(await rules(`CREATE INDEX CONCURRENTLY i ON s.t (c);\nDROP INDEX i;`)).toEqual(["HAZ-09"]);
   });
 });

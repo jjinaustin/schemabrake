@@ -1,0 +1,32 @@
+datasource db {
+  provider = "postgresql"
+  url = "postgresql://x"
+}
+enum Role {
+  USER
+  ADMIN
+}
+model User {
+  id    Int    @id @default(autoincrement())
+  email String
+  age   BigInt
+  stripeCustomerId String
+  plan  String @default("free")
+  role  Role @default(USER)
+  posts Post[]
+  invoices Invoice[]
+  @@index([age])
+}
+model Post {
+  id     Int  @id @default(autoincrement())
+  title  String
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+}
+model Invoice {
+  id Int @id
+  total Int
+  userId Int?
+  user User? @relation(fields: [userId], references: [id])
+  @@index([total])
+}

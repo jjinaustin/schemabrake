@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import { lineAtByte, parseStatements } from "./sql.js";
+import { lineAtByte, parseStatements, type Statement, unwrapDoBlock } from "./sql.js";
 import {
   type FileContext,
   type Finding,
@@ -54,15 +54,23 @@ export async function analyzeSql(path: string, sql: string, opts: AnalyzeOptions
   const disabled = opts.disabled ?? new Set<RuleId>();
   if (IGNORE_FILE.test(sql)) return { path, orm, findings: [] };
 
-  let statements;
+  const bytes = Buffer.from(sql, "utf8");
+  const statements: Statement[] = [];
   try {
-    statements = await parseStatements(sql);
+    for (const stmt of await parseStatements(sql)) {
+      statements.push(stmt, ...(await unwrapDoBlock(stmt, bytes)));
+    }
   } catch (err: any) {
     return { path, orm, findings: [], error: { message: err.message, line: err.line } };
   }
 
-  const bytes = Buffer.from(sql, "utf8");
-  const ctx: FileContext = { orm, statements, createdTables: new Set(), lineOf: (o) => lineAtByte(bytes, o) };
+  const ctx: FileContext = {
+    orm,
+    statements,
+    createdTables: new Set(),
+    createdIndexes: new Set(),
+    lineOf: (o) => lineAtByte(bytes, o),
+  };
   const findings: Finding[] = [];
 
   statements.forEach((stmt, i) => {
@@ -75,6 +83,10 @@ export async function analyzeSql(path: string, sql: string, opts: AnalyzeOptions
     }
     // Registered after the rules run, so a table only counts as new for statements that follow it.
     if (stmt.kind === "CreateStmt") ctx.createdTables.add(tableKey(stmt.node.relation));
+    if (stmt.kind === "IndexStmt" && stmt.node.idxname) {
+      // An index lives in its table's schema.
+      ctx.createdIndexes.add(tableKey({ schemaname: stmt.node.relation.schemaname, relname: stmt.node.idxname }));
+    }
   });
 
   if (!disabled.has("HAZ-06")) {
