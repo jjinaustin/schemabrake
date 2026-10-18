@@ -10,6 +10,45 @@ npx schemabrake check prisma/migrations
 
 With no paths it checks `./prisma/migrations` and `./drizzle`.
 
+## GitHub Action
+
+```yaml
+# .github/workflows/migrations.yml
+name: migrations
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  schemabrake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jjinaustin/schemabrake@main
+```
+
+The action checks only the migration files the pull request adds or changes, read from the
+GitHub API, so the checkout needs no history. It posts one comment with the report and edits that
+same comment on every later push. It also annotates each hazard on its line in the diff, writes
+the report to the job summary, and fails the check on critical findings.
+
+| Input | Default | |
+| --- | --- | --- |
+| `paths` | Prisma and Drizzle locations | Directories to check instead, one per line, e.g. `supabase/migrations` |
+| `fail-on` | `critical` | `critical`, `warning`, `info` or `never` |
+| `disable` | | Rule IDs to skip, e.g. `HAZ-06` |
+| `comment` | `true` | `false` to annotate and summarize without commenting |
+| `github-token` | `github.token` | |
+
+Outputs: `files`, `critical`, `warning`, `info`.
+
+Pull requests from forks get a read-only token, so the comment is skipped with a warning; the
+annotations, job summary and pass/fail still work. Avoid an `on.pull_request.paths` filter if
+the check is required: a pull request that doesn't match it leaves the required check pending,
+and one that stops touching migrations leaves the old comment in place.
+
+The runner needs Node 18.18 or later; GitHub-hosted runners have it.
+
 ## Rules
 
 | ID | Severity | Flags | Why |
