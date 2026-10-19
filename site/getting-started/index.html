@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with SchemaBrake</title>
+<meta name="description" content="Add SchemaBrake to a repository in one workflow file: every pull request that changes a Prisma or Drizzle migration gets a safety report.">
+<link rel="canonical" href="https://schemabrake.dev/getting-started/">
+<link rel="icon" type="image/svg+xml" href="../icons/schemabrake-ink-square.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon-180.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Get started with SchemaBrake">
+<meta property="og:description" content="Add SchemaBrake to a repository in one workflow file: every pull request that changes a Prisma or Drizzle migration gets a safety report.">
+<meta property="og:url" content="https://schemabrake.dev/getting-started/">
+<meta property="og:image" content="https://schemabrake.dev/icons/app-icon-1024.png">
+<meta name="theme-color" content="#111318">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F4F2EC;font-family:'Space Grotesk',sans-serif;color:#111318;-webkit-font-smoothing:antialiased}a{color:#111318;text-decoration:none}a:hover{color:#E5482B}::selection{background:#E5482B;color:#fff}</style>
+<style>.hv1:hover{background:#111318 !important;color:#fff !important}.hv2:hover{background:#111318 !important;color:#F4F2EC !important}@media (max-width:640px){p code{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="border-bottom:1px solid #DAD7CF">
+<div style="max-width:880px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+<a href="../" aria-label="SchemaBrake home" style="display:flex;align-items:center;gap:10px">
+<svg width="32" height="32" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#111318"></rect><path d="M38 24 c-7 0 -9 3 -9 9 v7 c0 5 -2 8 -7 10 c5 2 7 5 7 10 v7 c0 6 2 9 9 9 M62 24 c7 0 9 3 9 9 v7 c0 5 2 8 7 10 c-5 2 -7 5 -7 10 v7 c0 6 -2 9 -9 9" fill="none" stroke="#F4F2EC" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path><polygon points="54.6,38.9 61.1,45.4 61.1,54.6 54.6,61.1 45.4,61.1 38.9,54.6 38.9,45.4 45.4,38.9" fill="#E5482B"></polygon></svg>
+<span style="font-size:20px;font-weight:700;letter-spacing:-0.02em">SchemaBrake</span>
+</a>
+</div>
+</header>
+
+<main style="max-width:880px;width:100%;box-sizing:border-box;margin:0 auto;padding:72px 32px 96px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#2F7D4F;text-transform:uppercase;letter-spacing:0.08em">
+<span style="width:8px;height:8px;border-radius:50%;background:#2F7D4F;display:block"></span>Getting started
+</div>
+<h1 style="margin:0;font-size:clamp(40px,6vw,64px);line-height:1;font-weight:700;letter-spacing:-0.035em;text-wrap:balance">Protect your first repository <span style="color:#E5482B">in a minute.</span></h1>
+<p style="margin:0;font-size:20px;line-height:1.5;color:#3A3D45;max-width:620px;text-wrap:pretty">Add one workflow file. Every pull request that changes a migration then gets a safety report before it can merge.</p>
+</div>
+
+<ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0">
+<li style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:20px">
+<div style="display:flex;flex-direction:column;align-items:center">
+<span style="width:40px;height:40px;border-radius:50%;background:#111318;color:#F4F2EC;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700">1</span>
+<span style="flex:1;width:1.5px;background:#DAD7CF;margin:8px 0"></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding-bottom:44px">
+<h2 style="margin:6px 0 0;font-size:26px;font-weight:700;letter-spacing:-0.02em">Create the workflow file</h2>
+<p style="margin:0;font-size:17px;line-height:1.5;color:#3A3D45">Create a file named <code style="font-family:'JetBrains Mono',monospace;font-size:15px;background:#E9E7E2;padding:2px 6px;border-radius:4px">.github/workflows/schemabrake.yml</code> in your repository:</p>
+<div style="background:#111318;border-radius:12px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 10px 18px;border-bottom:1px solid #2C3038">
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#9A9DA6">schemabrake.yml</span>
+<button type="button" id="copy" style="border:1px solid #2C3038;background:transparent;color:#F4F2EC;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer">Copy</button>
+</div>
+<pre style="margin:0;padding:18px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.7;color:#E8E6E0;overflow-x:auto"><code id="yaml"><span style="color:#9A9DA6">name:</span> Database Safety Check
+<span style="color:#9A9DA6">on:</span> pull_request
+<span style="color:#9A9DA6">permissions:</span>
+  <span style="color:#9A9DA6">contents:</span> read
+  <span style="color:#9A9DA6">pull-requests:</span> write
+<span style="color:#9A9DA6">jobs:</span>
+  <span style="color:#9A9DA6">schemabrake:</span>
+    <span style="color:#9A9DA6">runs-on:</span> ubuntu-latest
+    <span style="color:#9A9DA6">steps:</span>
+      - <span style="color:#9A9DA6">uses:</span> actions/checkout@v5
+      - <span style="color:#9A9DA6">uses:</span> <span style="color:#FF7A5C">jjinaustin/schemabrake@v1</span></code></pre>
+</div>
+<p style="margin:0;font-size:14px;color:#5A5D66">SchemaBrake finds Prisma and Drizzle migrations on its own. Keep yours somewhere else? Add <code style="font-family:'JetBrains Mono',monospace">with: paths: db/migrations</code> under the last step.</p>
+</div>
+</li>
+<li style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:20px">
+<div style="display:flex;flex-direction:column;align-items:center">
+<span style="width:40px;height:40px;border-radius:50%;background:#111318;color:#F4F2EC;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700">2</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<h2 style="margin:6px 0 0;font-size:26px;font-weight:700;letter-spacing:-0.02em">Open a pull request</h2>
+<p style="margin:0;font-size:17px;line-height:1.5;color:#3A3D45;text-wrap:pretty">Push this file, then open a pull request that changes a migration. SchemaBrake posts its report as a comment, updates that same comment on every push, and marks each hazard on its line in the diff.</p>
+</div>
+</li>
+</ol>
+
+<div style="border:1.5px solid #111318;border-radius:16px;padding:32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:440px">
+<h3 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-0.02em">Questions or feedback?</h3>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#3A3D45">Email <a href="mailto:support@schemabrake.dev" style="color:#E5482B;font-weight:500">support@schemabrake.dev</a> or open an issue on <a href="https://github.com/jjinaustin/schemabrake/issues" style="color:#E5482B;font-weight:500">GitHub</a>.</p>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:12px">
+<a href="../#playground" style="padding:14px 20px;border-radius:10px;background:#E5482B;color:#fff;font-weight:700" class="hv1">Try the playground</a>
+<a href="https://github.com/jjinaustin/schemabrake#readme" style="padding:14px 20px;border-radius:10px;border:1.5px solid #111318;font-weight:700" class="hv2">Read the docs</a>
+</div>
+</div>
+</main>
+</div>
+<script>
+document.getElementById("copy").addEventListener("click", (e) => {
+  const button = e.currentTarget;
+  navigator.clipboard?.writeText(document.getElementById("yaml").textContent).then(() => {
+    button.textContent = "Copied";
+    button.style.background = "#2F7D4F";
+    clearTimeout(button._t);
+    button._t = setTimeout(() => { button.textContent = "Copy"; button.style.background = "transparent"; }, 1800);
+  }, () => { button.textContent = "Select and copy"; });
+});
+</script>
+</body>
+</html>

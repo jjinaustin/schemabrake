@@ -107,6 +107,20 @@ npm install
 npm test        # tsc + vitest; fixtures are real Prisma and Drizzle output (see test/fixtures)
 ```
 
+## Website
+
+`site/` is schemabrake.dev, published to GitHub Pages by `.github/workflows/pages.yml` on every
+push to `main`. Its playground runs `src/engine.ts` in the browser, bundled by `npm run build:site`
+together with the PostgreSQL parser's `.wasm`; both are build outputs and not committed.
+
+```
+npm run build:site && npx serve site    # or any static server; the playground needs http, not file://
+```
+
+The pages are generated from the design exports in `design/` by
+`python3 scripts/convert-design.py design site`, which applies the copy and link changes listed in it.
+The playground's behaviour is in `site/assets/playground.js`.
+
 ## Releasing
 
 Publish a GitHub release with a `vX.Y.Z` tag created from `main`. The `major-tag` workflow then
