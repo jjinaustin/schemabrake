@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SchemaBrake: catch dangerous database migrations before they merge</title>
+<meta name="description" content="A GitHub Action that reads Prisma and Drizzle migrations with PostgreSQL's own parser and flags table locks and data loss in the pull request. No database access.">
+<link rel="canonical" href="https://schemabrake.dev/">
+<link rel="icon" type="image/svg+xml" href="icons/schemabrake-ink-square.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SchemaBrake: catch dangerous database migrations before they merge">
+<meta property="og:description" content="A GitHub Action that reads Prisma and Drizzle migrations with PostgreSQL's own parser and flags table locks and data loss in the pull request. No database access.">
+<meta property="og:url" content="https://schemabrake.dev/">
+<meta property="og:image" content="https://schemabrake.dev/icons/app-icon-1024.png">
+<meta name="theme-color" content="#111318">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F4F2EC;font-family:'Space Grotesk',sans-serif;color:#111318;-webkit-font-smoothing:antialiased}a{color:#111318;text-decoration:none}a:hover{color:#E5482B}textarea{outline:none}::selection{background:#E5482B;color:#fff}</style>
+<style>.hv1:hover{background:#E5482B !important;color:#fff !important}.hv2:hover{background:#111318 !important;color:#fff !important}.hv3:hover{background:#111318 !important;color:#F4F2EC !important}.hv4:hover{color:#F4F2EC !important;border-color:#5A5D66 !important}.hv5:hover{background:#F4F2EC !important;color:#111318 !important}textarea#pg-sql{tab-size:2}@media (max-width:640px){a.nav-section{display:none}}</style>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+<header style="position:sticky;top:0;z-index:5;background:rgba(244,242,236,0.92);backdrop-filter:blur(8px);border-bottom:1px solid #DAD7CF">
+<div style="max-width:1200px;margin:0 auto;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+<a href="./" aria-label="SchemaBrake home" style="display:flex;align-items:center;gap:10px">
+<svg width="32" height="32" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#111318"></rect><path d="M38 24 c-7 0 -9 3 -9 9 v7 c0 5 -2 8 -7 10 c5 2 7 5 7 10 v7 c0 6 2 9 9 9 M62 24 c7 0 9 3 9 9 v7 c0 5 2 8 7 10 c-5 2 -7 5 -7 10 v7 c0 6 -2 9 -9 9" fill="none" stroke="#F4F2EC" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path><polygon points="54.6,38.9 61.1,45.4 61.1,54.6 54.6,61.1 45.4,61.1 38.9,54.6 38.9,45.4 45.4,38.9" fill="#E5482B"></polygon></svg>
+<span style="font-size:20px;font-weight:700;letter-spacing:-0.02em">SchemaBrake</span>
+</a>
+<nav style="display:flex;align-items:center;gap:28px;font-size:15px;font-weight:500">
+<a class="nav-section" href="#playground">Playground</a>
+<a class="nav-section" href="#features">Features</a>
+<a class="nav-section" href="#pricing">Pricing</a>
+<a class="nav-section" href="https://github.com/jjinaustin/schemabrake#readme">Docs</a>
+<a href="getting-started/" style="background:#111318;color:#F4F2EC;padding:9px 16px;border-radius:8px" class="hv1">Install</a>
+</nav>
+</div>
+</header>
+
+<section style="max-width:1200px;width:100%;box-sizing:border-box;margin:0 auto;padding:96px 32px 72px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#5A5D66;text-transform:uppercase;letter-spacing:0.08em">
+<span style="width:8px;height:8px;background:#E5482B;display:block"></span>GitHub Action · Prisma · Drizzle · PostgreSQL
+</div>
+<h1 style="margin:0;font-size:clamp(44px,7vw,88px);line-height:0.98;font-weight:700;letter-spacing:-0.035em;max-width:1000px;text-wrap:balance">Catch production-breaking database migrations <span style="color:#E5482B">before they merge.</span></h1>
+<p style="margin:0;font-size:clamp(18px,2vw,22px);line-height:1.5;color:#3A3D45;max-width:720px;text-wrap:pretty">An ORM-aware GitHub Action that statically parses Prisma and Drizzle migration files in CI to detect exclusive table locks and data loss hazards—with zero database access required.</p>
+<div style="display:flex;flex-wrap:wrap;gap:12px">
+<a href="https://github.com/marketplace/actions/schemabrake" style="display:flex;align-items:center;gap:10px;background:#E5482B;color:#fff;padding:16px 24px;border-radius:10px;font-size:17px;font-weight:700" class="hv2">Install from GitHub Marketplace<span style="font-family:'JetBrains Mono',monospace">→</span></a>
+<a href="https://github.com/jjinaustin/schemabrake" style="display:flex;align-items:center;gap:10px;background:transparent;color:#111318;padding:16px 24px;border-radius:10px;font-size:17px;font-weight:700;border:1.5px solid #111318" class="hv3">View on GitHub</a>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px 28px;padding-top:24px;border-top:1px solid #DAD7CF;font-family:'JetBrains Mono',monospace;font-size:14px;color:#3A3D45">
+<span style="display:flex;align-items:center;gap:8px"><span style="color:#E5482B">■</span>Open source, MIT licensed</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="color:#E5482B">■</span>Zero DB credentials required</span>
+<span style="display:flex;align-items:center;gap:8px"><span style="color:#E5482B">■</span>PostgreSQL’s own parser</span>
+</div>
+</section>
+
+<section id="playground" style="background:#111318;color:#F4F2EC">
+<div style="max-width:1200px;margin:0 auto;padding:88px 32px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#9A9DA6;text-transform:uppercase;letter-spacing:0.08em">Live playground · runs in your browser</div>
+<h2 style="margin:0;font-size:clamp(32px,4.5vw,52px);font-weight:700;letter-spacing:-0.03em;line-height:1.05">Test a migration right now.</h2>
+</div>
+<div style="display:flex;gap:4px;background:#1E2128;padding:4px;border-radius:10px">
+<button type="button" data-orm="prisma" aria-pressed="true" style="border:0;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px 16px;border-radius:7px;background:#F4F2EC;color:#111318">Prisma</button>
+<button type="button" data-orm="drizzle" aria-pressed="false" style="border:0;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px 16px;border-radius:7px;background:transparent;color:#9A9DA6">Drizzle</button>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:20px">
+
+<div style="background:#1A1D23;border:1px solid #2C3038;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #2C3038;font-family:'JetBrains Mono',monospace;font-size:13px;color:#9A9DA6">
+<span id="pg-path" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">prisma/migrations/20261018_add_stripe_id/migration.sql</span>
+<button type="button" id="pg-reset" style="border:1px solid #2C3038;background:transparent;color:#9A9DA6;font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer" class="hv4">Reset</button>
+</div>
+<div style="display:flex;flex:1;min-height:380px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:24px">
+<div style="padding:16px 0;width:44px;flex:none;text-align:right;color:#4A4E58;user-select:none">
+<div id="pg-lines" aria-hidden="true"></div>
+</div>
+<textarea id="pg-sql" aria-label="Migration SQL" spellcheck="false" wrap="off" style="flex:1;min-width:0;background:transparent;border:0;resize:none;color:#E8E6E0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:24px;padding:16px 16px 16px 4px;white-space:pre;overflow-x:auto"></textarea>
+</div>
+</div>
+
+<div style="background:#F4F2EC;color:#111318;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0">
+<div style="display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #DAD7CF">
+<svg width="22" height="22" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#111318"></rect><path d="M38 24 c-7 0 -9 3 -9 9 v7 c0 5 -2 8 -7 10 c5 2 7 5 7 10 v7 c0 6 2 9 9 9 M62 24 c7 0 9 3 9 9 v7 c0 5 2 8 7 10 c-5 2 -7 5 -7 10 v7 c0 6 -2 9 -9 9" fill="none" stroke="#F4F2EC" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></path><polygon points="54.6,38.9 61.1,45.4 61.1,54.6 54.6,61.1 45.4,61.1 38.9,54.6 38.9,45.4 45.4,38.9" fill="#E5482B"></polygon></svg>
+<span style="font-weight:700;font-size:16px">SchemaBrake Safety Report</span>
+<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:#5A5D66;color:#fff" id="pg-verdict">LOADING</span>
+</div>
+<div style="padding:16px 18px 6px;font-size:14px;color:#3A3D45;line-height:1.5" id="pg-summary" aria-live="polite">Loading the PostgreSQL parser…</div>
+<div style="display:flex;flex-direction:column;padding:6px 18px 18px;gap:10px;flex:1">
+<div id="pg-results" style="display:contents"></div>
+
+</div>
+<div style="padding:12px 18px;border-top:1px solid #DAD7CF;font-size:13px;color:#5A5D66">Protected by SchemaBrake — free for open source repositories.</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<section id="features" style="max-width:1200px;width:100%;box-sizing:border-box;margin:0 auto;padding:96px 32px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px;max-width:640px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5A5D66;text-transform:uppercase;letter-spacing:0.08em">Why not a raw SQL linter</div>
+<h2 style="margin:0;font-size:clamp(32px,4.5vw,52px);font-weight:700;letter-spacing:-0.03em;line-height:1.05">Built for how your ORM actually ships schema.</h2>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1px;background:#DAD7CF;border:1px solid #DAD7CF;border-radius:14px;overflow:hidden">
+<div style="background:#F4F2EC;padding:32px;display:flex;flex-direction:column;gap:14px">
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E5482B;font-weight:700">01</span>
+<h3 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em">ORM-aware engine</h3>
+<p style="margin:0;font-size:16px;line-height:1.55;color:#3A3D45;text-wrap:pretty">Understands Prisma and Drizzle migration structures, catching framework-specific bugs standard SQL linters miss.</p>
+</div>
+<div style="background:#F4F2EC;padding:32px;display:flex;flex-direction:column;gap:14px">
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E5482B;font-weight:700">02</span>
+<h3 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em">Zero-trust security</h3>
+<p style="margin:0;font-size:16px;line-height:1.55;color:#3A3D45;text-wrap:pretty">Operates entirely via static AST parsing. It never connects to your live production or staging databases.</p>
+</div>
+<div style="background:#F4F2EC;padding:32px;display:flex;flex-direction:column;gap:14px">
+<span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#E5482B;font-weight:700">03</span>
+<h3 style="margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em">Inline PR feedback</h3>
+<p style="margin:0;font-size:16px;line-height:1.55;color:#3A3D45;text-wrap:pretty">Automatically posts a clean markdown hazard report directly to the GitHub Pull Request during code review.</p>
+</div>
+</div>
+</section>
+
+<section id="pricing" style="max-width:1200px;width:100%;box-sizing:border-box;margin:0 auto;padding:0 32px 112px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#5A5D66;text-transform:uppercase;letter-spacing:0.08em">Pricing</div>
+<h2 style="margin:0;font-size:clamp(32px,4.5vw,52px);font-weight:700;letter-spacing:-0.03em;line-height:1.05">Free for open source. Flat-rate for teams.</h2>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:20px">
+<div style="border:1.5px solid #111318;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="font-size:20px;font-weight:700">Free</span>
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:56px;font-weight:700;letter-spacing:-0.03em">$0</span><span style="color:#5A5D66">/ mo</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:16px;flex:1">
+<div style="display:flex;gap:10px"><span style="color:#E5482B">■</span>Unlimited scans for public open-source repositories</div>
+<div style="display:flex;gap:10px"><span style="color:#E5482B">■</span>Full rule set included (HAZ-01 – HAZ-09)</div>
+</div>
+<a href="getting-started/" style="text-align:center;padding:14px;border-radius:10px;border:1.5px solid #111318;font-weight:700" class="hv3">Install free</a>
+</div>
+<div style="background:#111318;color:#F4F2EC;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-size:20px;font-weight:700">Team Pro</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;background:#E5482B;color:#fff;padding:4px 10px;border-radius:999px">Coming soon</span></div>
+<div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:56px;font-weight:700;letter-spacing:-0.03em">$29</span><span style="color:#9A9DA6">/ mo per org</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:16px;flex:1">
+<div style="display:flex;gap:10px"><span style="color:#E5482B">■</span>Up to 10 private repositories</div>
+<div style="display:flex;gap:10px"><span style="color:#E5482B">■</span>Custom rule exclusions and severity levels</div>
+<div style="display:flex;gap:10px"><span style="color:#E5482B">■</span>Slack / Discord webhook alerts</div>
+</div>
+<a href="mailto:support@schemabrake.dev?subject=Team%20Pro%20waitlist" style="text-align:center;padding:14px;border-radius:10px;background:#E5482B;color:#fff;font-weight:700" class="hv5">Join the waitlist</a>
+</div>
+</div>
+</section>
+
+<footer style="border-top:1px solid #DAD7CF;margin-top:auto">
+<div style="max-width:1200px;margin:0 auto;padding:28px 32px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;font-size:14px;color:#5A5D66">
+<span>© 2026 SchemaBrake</span>
+<div style="display:flex;gap:24px"><a href="https://github.com/jjinaustin/schemabrake#readme" style="color:#5A5D66">Docs</a><a href="https://github.com/jjinaustin/schemabrake" style="color:#5A5D66">GitHub</a><a href="https://github.com/marketplace/actions/schemabrake" style="color:#5A5D66">Marketplace</a><a href="mailto:support@schemabrake.dev" style="color:#5A5D66">Contact</a></div>
+</div>
+</footer>
+</div>
+<template id="pg-card"><div style="background:#fff;border:1px solid #E2DFD7;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px">
+<span style="font-weight:700;padding:3px 8px;border-radius:4px;" data-f="level"></span>
+<span style="font-weight:700" data-f="id"></span>
+<span style="color:#5A5D66" data-f="name"></span>
+<span style="margin-left:auto;color:#5A5D66" data-f="loc"></span>
+</div>
+<div style="font-size:15px;line-height:1.45;text-wrap:pretty" data-f="desc"></div>
+<div style="font-size:13px;line-height:1.5;color:#3A3D45;background:#F4F2EC;border-radius:6px;padding:8px 10px;text-wrap:pretty"><span style="font-weight:700">Fix: </span><span data-f="fix"></span></div>
+</div></template>
+<template id="pg-clean"><div data-f="clean" style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:#3A3D45;font-size:15px;padding:40px 0">No hazards detected. This migration is safe to merge.</div></template>
+<script type="module" src="assets/playground.js"></script>
+</body>
+</html>

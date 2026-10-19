@@ -1,2 +1,4 @@
 node_modules/
 dist/
+site/assets/engine.js
+site/libpg-query.wasm

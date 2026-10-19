@@ -1,5 +1,19 @@
 import { parse } from "libpg-query";
 
+// Uint8Array and TextEncoder rather than Buffer, so the engine also runs in the browser playground.
+const utf8 = new TextEncoder();
+const fromUtf8 = new TextDecoder();
+
+/** Length of a string in UTF-8 bytes. */
+export function byteLength(s: string): number {
+  return utf8.encode(s).length;
+}
+
+/** A string as UTF-8 bytes, the unit libpg_query reports positions in. */
+export function toBytes(s: string): Uint8Array {
+  return utf8.encode(s);
+}
+
 /** One top-level statement from a migration file, with its position in the source. */
 export interface Statement {
   /** The statement's node type, e.g. "IndexStmt", "AlterTableStmt". */
@@ -33,8 +47,8 @@ export class SqlParseError extends Error {
  * libpg_query reports positions as UTF-8 byte offsets, so all slicing happens on bytes;
  * a comment containing non-ASCII characters would otherwise shift every line number after it.
  */
-export async function parseStatements(sql: string, within?: { file: Buffer; origin: number }): Promise<Statement[]> {
-  const bytes = Buffer.from(sql, "utf8");
+export async function parseStatements(sql: string, within?: { file: Uint8Array; origin: number }): Promise<Statement[]> {
+  const bytes = utf8.encode(sql);
   const file = within?.file ?? bytes;
   const origin = within?.origin ?? 0;
   let tree: any;
@@ -50,7 +64,7 @@ export async function parseStatements(sql: string, within?: { file: Buffer; orig
     const start: number = raw.stmt_location ?? 0;
     // stmt_len is omitted (0) for the last statement when it has no trailing semicolon.
     const end: number = raw.stmt_len ? start + raw.stmt_len : bytes.length;
-    const chunk = bytes.subarray(start, end).toString("utf8");
+    const chunk = fromUtf8.decode(bytes.subarray(start, end));
     const bodyAt = skipLeadingTrivia(chunk);
     const kind = Object.keys(raw.stmt)[0];
     out.push({
@@ -75,7 +89,7 @@ const DO_BODY = /^\s*BEGIN\b(?<sql>[\s\S]*?)(?:\bEXCEPTION\b[\s\S]*)?\bEND\s*;?\
  * other. Bodies with control flow, variables or dynamic SQL fail to parse as plain SQL and are
  * returned as an empty list, so they stay unchecked rather than misread.
  */
-export async function unwrapDoBlock(stmt: Statement, file: Buffer): Promise<Statement[]> {
+export async function unwrapDoBlock(stmt: Statement, file: Uint8Array): Promise<Statement[]> {
   if (stmt.kind !== "DoStmt") return [];
   const args = (stmt.node.args ?? []).map((a: any) => a.DefElem);
   const language = args.find((a: any) => a.defname === "language")?.arg?.String?.sval;
@@ -85,7 +99,7 @@ export async function unwrapDoBlock(stmt: Statement, file: Buffer): Promise<Stat
   // `location` points at the opening dollar quote; single-quoted bodies have escapes that would
   // shift every offset, so only dollar-quoted ones are unwrapped.
   const at = stmt.origin + as.location;
-  const quote = /^\$[A-Za-z_0-9]*\$/.exec(file.subarray(at, at + 64).toString("utf8"))?.[0];
+  const quote = /^\$[A-Za-z_0-9]*\$/.exec(fromUtf8.decode(file.subarray(at, at + 64)))?.[0];
   if (!quote) return [];
   const body: string = as.arg.String.sval;
   const m = DO_BODY.exec(body);
@@ -94,7 +108,7 @@ export async function unwrapDoBlock(stmt: Statement, file: Buffer): Promise<Stat
   try {
     const inner = await parseStatements(m.groups.sql, {
       file,
-      origin: at + Buffer.byteLength(quote) + Buffer.byteLength(body.slice(0, sqlStart)),
+      origin: at + byteLength(quote) + byteLength(body.slice(0, sqlStart)),
     });
     return inner.map((s) => ({ ...s, leadingComments: stmt.leadingComments + s.leadingComments }));
   } catch {
@@ -103,7 +117,7 @@ export async function unwrapDoBlock(stmt: Statement, file: Buffer): Promise<Stat
 }
 
 /** 1-based line containing the given UTF-8 byte offset. */
-export function lineAtByte(bytes: Buffer, offset: number): number {
+export function lineAtByte(bytes: Uint8Array, offset: number): number {
   let line = 1;
   for (let i = 0; i < offset && i < bytes.length; i++) if (bytes[i] === 0x0a) line++;
   return line;
